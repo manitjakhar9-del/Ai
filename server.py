@@ -5,28 +5,30 @@ import requests
 
 app = FastAPI()
 
-API_KEY = os.getenv("GEMINI_API_KEY")
+GROQ_KEY = os.getenv("GROQ_API_KEY")
 
 class Chat(BaseModel):
     message: str
 
 @app.post("/chat")
 def chat(req: Chat):
-    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + API_KEY
+    headers = {
+        "Authorization": "Bearer " + GROQ_KEY,
+        "Content-Type": "application/json"
+    }
 
-    payload = {
-        "contents": [
-            {
-                "parts": [
-                    {"text": req.message}
-                ]
-            }
+    data = {
+        "model": "llama3-70b-8192",
+        "messages": [
+            {"role":"system","content":"You are a helpful AI assistant."},
+            {"role":"user","content": req.message}
         ]
     }
 
-    r = requests.post(url, json=payload)
-    return r.json()
+    r = requests.post(
+        "https://api.groq.com/openai/v1/chat/completions",
+        headers=headers,
+        json=data
+    )
 
-@app.get("/")
-def root():
-    return {"status": "Manit AI is running"}
+    return {"reply": r.json()["choices"][0]["message"]["content"]}
