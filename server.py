@@ -1,17 +1,28 @@
-print("Hello, World!")from fastapi import FastAPI
+from fastapi import FastAPI
 from pydantic import BaseModel
-import google.generativeai as genai
 import os
-
-genai.configure(api_key=os.environ["GEMINI_API_KEY"])
-model = genai.GenerativeModel("gemini-2.5-flash")
+import requests
 
 app = FastAPI()
+
+API_KEY = os.getenv("GEMINI_API_KEY")
 
 class Chat(BaseModel):
     message: str
 
 @app.post("/chat")
 def chat(req: Chat):
-    r = model.generate_content(req.message)
-    return {"reply": r.text}
+    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + API_KEY
+
+    payload = {
+        "contents": [
+            {
+                "parts": [
+                    {"text": req.message}
+                ]
+            }
+        ]
+    }
+
+    r = requests.post(url, json=payload)
+    return r.json()
