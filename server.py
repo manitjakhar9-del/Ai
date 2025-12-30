@@ -26,3 +26,7 @@ def chat(req: Chat):
 
     r = requests.post(url, json=payload)
     return r.json()
+
+@app.get("/")
+def root():
+    return {"status": "Manit AI is running"}
