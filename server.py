@@ -17,20 +17,24 @@ class Chat(BaseModel):
 @app.post("/chat")
 def chat(req: Chat):
 
-    # Load history
+    # Load full memory from Neon
     cur.execute(
-        "SELECT role, content FROM chats WHERE session_id=%s ORDER BY id",
+        "SELECT role, message FROM chats WHERE chat_id=%s ORDER BY created_at",
         (req.session_id,)
     )
     rows = cur.fetchall()
 
-    messages = [{"role":"system","content":"You are Manit AI. You remember everything the user says."}]
+    messages = [
+        {"role":"system","content":"You are Manit AI. You remember everything the user says."}
+    ]
 
-    for r,c in rows:
-        messages.append({"role":r,"content":c})
+    for r, m in rows:
+        messages.append({"role": r, "content": m})
 
+    # Add new user message
     messages.append({"role":"user","content":req.message})
 
+    # Call Groq with full history
     res = client.chat.completions.create(
         model="llama-3.1-8b-instant",
         messages=messages
@@ -38,11 +42,15 @@ def chat(req: Chat):
 
     reply = res.choices[0].message.content
 
-    # Save both user + AI
-    cur.execute("INSERT INTO chats (session_id, role, content) VALUES (%s,'user',%s)",
-                (req.session_id, req.message))
-    cur.execute("INSERT INTO chats (session_id, role, content) VALUES (%s,'assistant',%s)",
-                (req.session_id, reply))
+    # Save both user and AI to Neon
+    cur.execute(
+        "INSERT INTO chats (chat_id, role, message) VALUES (%s, %s, %s)",
+        (req.session_id, "user", req.message)
+    )
+    cur.execute(
+        "INSERT INTO chats (chat_id, role, message) VALUES (%s, %s, %s)",
+        (req.session_id, "assistant", reply)
+    )
     db.commit()
 
     return {"reply": reply}
