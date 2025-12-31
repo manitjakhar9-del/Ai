@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Manit AI</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{
+  background:#0f172a;
+  margin:0;
+  font-family:Arial;
+  color:white;
+}
+#chat{
+  height:85vh;
+  overflow-y:auto;
+  padding:10px;
+}
+.msg{
+  max-width:80%;
+  padding:10px;
+  margin:10px 0;
+  border-radius:10px;
+}
+.user{ background:#2563eb; margin-left:auto;}
+.bot{ background:#1e293b;}
+#input{
+  display:flex;
+  padding:10px;
+  background:black;
+}
+input{
+  flex:1;
+  padding:10px;
+  border:none;
+  border-radius:5px;
+}
+button{
+  margin-left:10px;
+  background:#22c55e;
+  border:none;
+  padding:10px;
+  border-radius:5px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="chat"></div>
+
+<div id="input">
+  <input id="text" placeholder="Message Manit AI...">
+  <button onclick="send()">Send</button>
+</div>
+
+<script>
+async function send(){
+  let msg = document.getElementById("text").value;
+  if(!msg) return;
+
+  add(msg,"user");
+  document.getElementById("text").value="";
+
+  let r = await fetch("https://ai-mup4.onrender.com/chat",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({message:msg})
+  });
+
+  let data = await r.json();
+  add(data.reply,"bot");
+}
+
+function add(text,type){
+  let d = document.createElement("div");
+  d.className="msg "+type;
+  d.innerText=text;
+  document.getElementById("chat").appendChild(d);
+  document.getElementById("chat").scrollTop=99999;
+}
+</script>
+
+</body>
+</html>
