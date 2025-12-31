@@ -1,109 +1,73 @@
 <!DOCTYPE html>
-<html lang="en" class="">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Manit AI</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script>tailwind.config={darkMode:'class'}</script>
 </head>
 
-<body class="flex h-screen bg-white dark:bg-gray-900">
+<body class="bg-gray-900 text-white h-screen flex">
 
-<div class="flex w-full">
-
-<!-- SIDEBAR -->
-<aside class="w-64 bg-gray-100 dark:bg-gray-800 p-3 flex flex-col">
-<button id="newChat" class="bg-blue-500 text-white p-2 rounded mb-3">New Chat</button>
-<div id="chatList" class="flex-1 space-y-2 overflow-y-auto"></div>
-</aside>
-
-<!-- CHAT -->
-<div class="flex flex-col flex-1">
-<div id="chatWindow" class="flex-1 p-4 overflow-y-auto">
-<ul id="messages" class="space-y-2"></ul>
+<!-- Sidebar -->
+<div class="w-20 bg-gray-800 flex flex-col items-center py-4 space-y-4">
+  <button onclick="newChat()" class="bg-blue-600 px-3 py-2 rounded text-sm">New</button>
 </div>
 
-<div class="flex p-3 border-t dark:border-gray-700">
-<textarea id="input" class="flex-1 p-2 rounded bg-gray-200 dark:bg-gray-800 text-black dark:text-white"></textarea>
-<button id="send" class="bg-blue-500 px-5 ml-2 rounded text-white">Send</button>
+<!-- Chat -->
+<div class="flex-1 flex flex-col">
+
+<div id="chat" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+
+<div class="p-3 flex bg-gray-800">
+  <input id="msg" class="flex-1 bg-gray-700 p-2 rounded text-white" placeholder="Type..." />
+  <button onclick="send()" class="bg-blue-600 px-4 ml-2 rounded">Send</button>
 </div>
-</div>
+
 </div>
 
 <script>
 const API = "https://ai-mup4.onrender.com/chat";
-const messages = document.getElementById("messages");
-const chatList = document.getElementById("chatList");
-let chats = JSON.parse(localStorage.getItem("chats") || "{}");
-let current = localStorage.getItem("current") || null;
 
-if(!current){
- current = Date.now().toString();
- chats[current]=[];
- localStorage.setItem("current",current);
- save();
-}
-renderChats();
-loadChat();
-
-function save(){
- localStorage.setItem("chats",JSON.stringify(chats));
+let sessionId = localStorage.getItem("session_id");
+if(!sessionId){
+  sessionId = "chat_" + Math.random().toString(36).substring(2,12);
+  localStorage.setItem("session_id", sessionId);
 }
 
-function renderChats(){
- chatList.innerHTML="";
- for(let id in chats){
-  let b=document.createElement("button");
-  b.textContent="Chat "+id.slice(-4);
-  b.className="w-full bg-gray-300 dark:bg-gray-700 p-2 rounded";
-  b.onclick=()=>{current=id; localStorage.setItem("current",id); loadChat();};
-  chatList.appendChild(b);
- }
+function add(text, me=false){
+  const div=document.createElement("div");
+  div.className = me?"text-right":"text-left";
+  div.innerHTML = `<span class="inline-block px-3 py-2 rounded ${me?"bg-blue-600":"bg-gray-700"}">${text}</span>`;
+  chat.appendChild(div);
+  chat.scrollTop=chat.scrollHeight;
 }
 
-function loadChat(){
- messages.innerHTML="";
- chats[current].forEach(m=>add(m.text,m.role,false));
+async function send(){
+  const t = msg.value.trim();
+  if(!t) return;
+  add(t,true);
+  msg.value="";
+
+  const res = await fetch(API,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      session_id: sessionId,
+      message: t
+    })
+  });
+
+  const data = await res.json();
+  add(data.reply || "Error");
 }
 
-function add(text,role,saveIt=true){
- let li=document.createElement("li");
- li.className=role=="user"?"text-right":"text-left";
- let b=document.createElement("div");
- b.className=(role=="user"?"bg-blue-500 text-white":"bg-gray-300 dark:bg-gray-700")+" inline-block p-2 rounded";
- b.textContent=text;
- li.appendChild(b);
- messages.appendChild(li);
- if(saveIt){
-   chats[current].push({role,text});
-   save();
- }
- document.getElementById("chatWindow").scrollTop=99999;
+function newChat(){
+  sessionId = "chat_" + Math.random().toString(36).substring(2,12);
+  localStorage.setItem("session_id", sessionId);
+  chat.innerHTML="";
+  add("New chat started.");
 }
-
-document.getElementById("send").onclick=async()=>{
- let msg=input.value.trim();
- if(!msg) return;
- add(msg,"user");
- input.value="";
- let r=await fetch(API,{
-  method:"POST",
-  headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({session_id:current,message:msg})
- });
- let d=await r.json();
- add(d.reply,"bot");
-};
-
-document.getElementById("newChat").onclick=()=>{
- current=Date.now().toString();
- chats[current]=[];
- localStorage.setItem("current",current);
- save();
- renderChats();
- loadChat();
-};
 </script>
 
 </body>
