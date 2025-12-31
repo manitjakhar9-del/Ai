@@ -61,7 +61,7 @@ async function send(){
   add(msg,"user");
   document.getElementById("text").value="";
 
-  let r = await fetch("https://ai-mup4.onrender.com/chat",{
+  let r = await fetch("https://ai-mup4.onrender.com/chat", {
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({message:msg})
