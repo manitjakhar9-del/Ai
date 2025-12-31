@@ -19,7 +19,7 @@ def root():
 def chat(req: Chat):
     try:
         response = client.chat.completions.create(
-            model="llama3-8b-8192",
+            model="llama3-70b-8192",
             messages=[
                 {"role": "system", "content": "You are Manit AI, a powerful RPG simulation and assistant."},
                 {"role": "user", "content": req.message}
