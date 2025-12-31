@@ -6,51 +6,64 @@ from groq import Groq
 
 app = FastAPI()
 
-client = Groq(api_key=os.environ["GROQ_API_KEY"])
-db = psycopg2.connect(os.environ["DATABASE_URL"])
+# ---- Groq Client ----
+client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+
+# ---- Neon DB Connection ----
+db = psycopg2.connect(os.environ.get("DATABASE_URL"))
 cur = db.cursor()
 
+# ---- Request Model ----
 class Chat(BaseModel):
     session_id: str
     message: str
 
+# ---- Chat Endpoint ----
 @app.post("/chat")
 def chat(req: Chat):
 
     # Load full memory from Neon
     cur.execute(
-        "SELECT role, message FROM chats WHERE chat_id=%s ORDER BY created_at",
+        "SELECT role, message FROM chats WHERE chat_id=%s ORDER BY created_at ASC",
         (req.session_id,)
     )
     rows = cur.fetchall()
 
     messages = [
-        {"role":"system","content":"You are Manit AI. You remember everything the user says."}
+        {
+            "role": "system",
+            "content": "You are Manit AI. You remember everything the user says. If the user asks about a past number or fact, you must recall it."
+        }
     ]
 
-    for r, m in rows:
-        messages.append({"role": r, "content": m})
+    # Load old messages
+    for role, msg in rows:
+        messages.append({"role": role, "content": msg})
 
     # Add new user message
-    messages.append({"role":"user","content":req.message})
+    messages.append({"role": "user", "content": req.message})
 
-    # Call Groq with full history
+    # Call Groq (WORKING MODEL)
     res = client.chat.completions.create(
-        model="llama-3.1-8b-instant",
-        messages=messages
+        model="mixtral-8x7b-32768",
+        messages=messages,
+        temperature=0.7
     )
 
     reply = res.choices[0].message.content
 
-    # Save both user and AI to Neon
+    # Save user message
     cur.execute(
         "INSERT INTO chats (chat_id, role, message) VALUES (%s, %s, %s)",
         (req.session_id, "user", req.message)
     )
+
+    # Save AI reply
     cur.execute(
         "INSERT INTO chats (chat_id, role, message) VALUES (%s, %s, %s)",
         (req.session_id, "assistant", reply)
     )
+
     db.commit()
 
     return {"reply": reply}
