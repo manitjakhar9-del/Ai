@@ -1,12 +1,12 @@
+import os
 from fastapi import FastAPI
 from pydantic import BaseModel
-import os
 from groq import Groq
 
-app = FastAPI()
-
-# Load Groq client
+# Load API key from Render environment variable
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+
+app = FastAPI()
 
 class Chat(BaseModel):
     message: str
@@ -19,18 +19,16 @@ def root():
 def chat(req: Chat):
     try:
         response = client.chat.completions.create(
-            model="groq/openai/gpt-oss-120b"
+            model="llama-3.1-8b-instant",
             messages=[
-                {"role": "system", "content": "You are Manit AI, a powerful RPG simulation and assistant."},
+                {"role": "system", "content": "You are Manit AI. You simulate real life and RPG worlds."},
                 {"role": "user", "content": req.message}
-            ]
+            ],
+            temperature=0.7,
+            max_tokens=1024
         )
 
-        return {
-            "reply": response.choices[0].message.content
-        }
+        return {"reply": response.choices[0].message.content}
 
     except Exception as e:
-        return {
-            "error": str(e)
-        }
+        return {"error": str(e)}
