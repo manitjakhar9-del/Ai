@@ -27,7 +27,7 @@ def home():
 def chat(req: Chat):
     try:
         response = client.chat.completions.create(
-            model="groq/llama-3.1-8b-instant",
+            model="groq/llama-3.1-8b-instant
             messages=[
                 {"role": "system", "content": "You are Manit AI, a powerful helpful assistant."},
                 {"role": "user", "content": req.message}
