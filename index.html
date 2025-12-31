@@ -2,39 +2,104 @@
 <html>
 <head>
 <title>Manit AI</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
 body{
-  background:#0f172a;
   margin:0;
+  background:#0b1220;
   font-family:Arial;
   color:white;
 }
 #chat{
   height:85vh;
   overflow-y:auto;
-  padding:10px;
+  padding:15px;
 }
 .msg{
   max-width:80%;
-  padding:10px;
-  margin:10px 0;
+  padding:10px 14px;
   border-radius:10px;
+  margin:8px 0;
+  word-wrap:break-word;
 }
-.user{ background:#2563eb; margin-left:auto;}
-.bot{ background:#1e293b;}
+.user{
+  background:#2563eb;
+  margin-left:auto;
+  text-align:right;
+}
+.bot{
+  background:#1f2937;
+}
 #input{
   display:flex;
   padding:10px;
-  background:black;
+  background:#020617;
 }
-input{
+#text{
   flex:1;
   padding:10px;
   border:none;
-  border-radius:5px;
+  outline:none;
+  border-radius:6px;
+  background:#1f2937;
+  color:white;
 }
 button{
+  margin-left:8px;
+  padding:10px 16px;
+  border:none;
+  background:#22c55e;
+  color:black;
+  font-weight:bold;
+  border-radius:6px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="chat"></div>
+
+<div id="input">
+  <input id="text" placeholder="Message Manit AI..." onkeydown="if(event.key==='Enter')send()">
+  <button onclick="send()">Send</button>
+</div>
+
+<script>
+async function send(){
+  let msg=document.getElementById("text").value;
+  if(!msg) return;
+
+  add(msg,"user");
+  document.getElementById("text").value="";
+
+  try{
+    let res=await fetch("https://ai-mup4.onrender.com/chat",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({message:msg})
+    });
+
+    let data=await res.json();
+    add(data.reply || "AI error","bot");
+
+  }catch(e){
+    add("Server offline","bot");
+  }
+}
+
+function add(text,type){
+  let div=document.createElement("div");
+  div.className="msg "+type;
+  div.innerText=text;
+  document.getElementById("chat").appendChild(div);
+  document.getElementById("chat").scrollTop=999999;
+}
+</script>
+
+</body>
+</html>button{
   margin-left:10px;
   background:#22c55e;
   border:none;
