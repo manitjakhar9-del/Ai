@@ -6,6 +6,7 @@ from groq import Groq
 
 app = FastAPI()
 
+# Allow Netlify & browser apps
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -20,23 +21,27 @@ class Chat(BaseModel):
     message: str
 
 @app.get("/")
-def home():
+def root():
     return {"status": "Manit AI is running"}
 
 @app.post("/chat")
 def chat(req: Chat):
     try:
         response = client.chat.completions.create(
-            model="groq/llama-3.1-8b-instant
+            model="llama-3.1-8b-instant",
             messages=[
-                {"role": "system", "content": "You are Manit AI, a powerful helpful assistant."},
+                {"role": "system", "content": "You are Manit AI, a powerful RPG and real-world simulation AI."},
                 {"role": "user", "content": req.message}
             ],
             temperature=0.7,
-            max_tokens=512
+            max_tokens=800
         )
 
-        return {"reply": response.choices[0].message.content}
+        return {
+            "reply": response.choices[0].message.content
+        }
 
     except Exception as e:
-        return {"error": str(e)}
+        return {
+            "error": str(e)
+        }
